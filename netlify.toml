@@ -1,7 +1,8 @@
 [build]
-base = "client"
-publish = "client/build"
-command = "npm install && npm run build"
+  base = "client"
+  command = "npm install && npm run build"
+  publish = "build"  # ✅ NOT client/client/build
+  functions = "netlify/functions"
 
 [functions]
 directory = "netlify/functions"
