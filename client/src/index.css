@@ -1,0 +1,18 @@
+/*
+  This CSS file sets up global styles for the React application.
+  It imports the 'Inter' font and applies basic styles.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom classes can be added here if needed, but Tailwind is used for most styling */
