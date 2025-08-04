@@ -8,33 +8,33 @@ exports.handler = async (event) => {
   try {
     const { recipe } = JSON.parse(event.body);
 
-    // Replace with your Spoonacular API call
-    // Example stub response:
-    const fakeResult = [
+    const response = await fetch(
+      `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${process.env.SPOONACULAR_API_KEY}`,
       {
-        original: "2 eggs",
-        calories: 150,
-        fat: "10g",
-        carbohydrates: "1g",
-        protein: "12g",
-        nutrition: {
-          nutrients: [
-            { name: "Vitamin A", amount: 120, unit: "µg" },
-            { name: "Iron", amount: 1.5, unit: "mg" },
-            { name: "Vitamin C", amount: 25, unit: "mg" },
-          ]
-        }
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([
+          {
+            name: recipe,
+            amount: 1,
+            unit: ''
+          }
+        ]),
       }
-    ];
+    );
+
+    const data = await response.json();
 
     return {
       statusCode: 200,
-      body: JSON.stringify(fakeResult),
+      body: JSON.stringify(data),
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
 };
