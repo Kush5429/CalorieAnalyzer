@@ -1,48 +1,46 @@
-// netlify/functions/analyze.js
-
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = (...args) =>
+  import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
   }
 
   try {
     const { recipe } = JSON.parse(event.body);
-    const apiKey = process.env.SPOONACULAR_API_KEY;
 
-    const response = await fetch(
-      `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ingredientList: recipe,
-          servings: 1
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!recipe || typeof recipe !== 'string') {
       return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: data.message || 'API Error' }),
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid recipe input.' }),
       };
     }
 
+    const response = await fetch('https://api.spoonacular.com/recipes/parseIngredients', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        ingredientList: recipe,
+        servings: '1',
+        apiKey: process.env.SPOONACULAR_API_KEY,
+      }),
+    });
+
+    const data = await response.json();
+
     return {
       statusCode: 200,
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     };
-
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
+      body: JSON.stringify({ error: 'Internal Server Error', details: err.message }),
     };
   }
 };
