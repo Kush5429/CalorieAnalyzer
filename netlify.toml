@@ -4,9 +4,6 @@
   publish = "build"
   functions = "netlify/functions"
 
-[functions]
-  directory = "netlify/functions"
-
 [[redirects]]
   from = "/api/analyze"
   to = "/.netlify/functions/analyze"
