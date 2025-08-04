@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -24,6 +22,9 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: "Missing Spoonacular API key." }),
       };
     }
+
+    // ✅ DYNAMIC IMPORT
+    const fetch = (await import('node-fetch')).default;
 
     const params = new URLSearchParams();
     params.append('ingredientList', recipe);
@@ -51,9 +52,9 @@ exports.handler = async (event) => {
     const result = data.map((item) => ({
       original: item.originalString,
       calories: item.nutrition?.nutrients?.find((n) => n.name === "Calories")?.amount || 0,
-      fat: item.nutrition?.nutrients?.find((n) => n.name === "Fat")?.amount + "g" || "0g",
-      carbohydrates: item.nutrition?.nutrients?.find((n) => n.name === "Carbohydrates")?.amount + "g" || "0g",
-      protein: item.nutrition?.nutrients?.find((n) => n.name === "Protein")?.amount + "g" || "0g",
+      fat: (item.nutrition?.nutrients?.find((n) => n.name === "Fat")?.amount || 0) + "g",
+      carbohydrates: (item.nutrition?.nutrients?.find((n) => n.name === "Carbohydrates")?.amount || 0) + "g",
+      protein: (item.nutrition?.nutrients?.find((n) => n.name === "Protein")?.amount || 0) + "g",
       nutrition: item.nutrition
     }));
 
