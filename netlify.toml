@@ -1,11 +1,11 @@
 [build]
   base = "client"
   command = "npm install && npm run build"
-  publish = "build"  # ✅ NOT client/client/build
-  functions = "netlify/functions"
+  publish = "build"  # ✅ Correct: React outputs to /build inside /client
+  functions = "../netlify/functions"  # ⛳ FIX: correct relative path from /client
 
 [functions]
-directory = "netlify/functions"
+  directory = "../netlify/functions"  # ⛳ Also match here for consistency
 
 [[redirects]]
   from = "/api/analyze"
