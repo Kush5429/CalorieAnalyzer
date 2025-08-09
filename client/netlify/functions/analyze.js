@@ -1,58 +1,66 @@
-const fetch = require("node-fetch");
+// analyze.js - CommonJS version for Netlify
+
+const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
   try {
-    const { recipe } = JSON.parse(event.body || "{}");
+    const { ingredientList } = JSON.parse(event.body || '{}');
 
-    if (!recipe) {
+    console.log("DEBUG: Ingredient list received:", ingredientList);
+
+    if (!ingredientList || ingredientList.trim() === "") {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Recipe text is required" }),
+        body: JSON.stringify({ error: 'Ingredient list is required.' }),
       };
     }
 
     const apiKey = process.env.SPOONACULAR_API_KEY;
     if (!apiKey) {
+      console.error("ERROR: SPOONACULAR_API_KEY not found in environment variables");
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Missing Spoonacular API key" }),
+        body: JSON.stringify({ error: 'Missing API key on server.' }),
       };
     }
 
-    const apiUrl = `https://api.spoonacular.com/recipes/analyze?apiKey=${apiKey}`;
+    const response = await fetch(
+      `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredientList,
+          servings: 1
+        }),
+      }
+    );
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: "Recipe Analysis",
-        ingredientList: recipe,
-      }),
-    });
+    const text = await response.text();
 
-    const rawText = await response.text();
+    console.log("DEBUG: Raw response from Spoonacular:", text);
 
     let data;
     try {
-      data = JSON.parse(rawText);
-    } catch {
-      console.error("Spoonacular returned non-JSON:", rawText);
+      data = JSON.parse(text);
+    } catch (err) {
+      console.error("ERROR: Spoonacular did not return valid JSON");
       return {
-        statusCode: 502,
-        body: JSON.stringify({ error: "Invalid JSON from Spoonacular" }),
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Invalid response from Spoonacular', raw: text }),
       };
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify([data]),
+      body: JSON.stringify(data),
     };
 
-  } catch (err) {
-    console.error("Function error:", err);
+  } catch (error) {
+    console.error("ERROR in analyze function:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Internal Server Error" }),
+      body: JSON.stringify({ error: error.message }),
     };
   }
 };
