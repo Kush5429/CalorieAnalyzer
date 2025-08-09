@@ -12,6 +12,13 @@ exports.handler = async (event) => {
     }
 
     const apiKey = process.env.SPOONACULAR_API_KEY;
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Missing Spoonacular API key" }),
+      };
+    }
+
     const apiUrl = `https://api.spoonacular.com/recipes/analyze`;
 
     const response = await fetch(`${apiUrl}?apiKey=${apiKey}`, {
@@ -20,17 +27,19 @@ exports.handler = async (event) => {
       body: new URLSearchParams({ ingredientList: recipe }),
     });
 
+    const rawText = await response.text();
+
     let data;
     try {
-      data = await response.json();
+      data = JSON.parse(rawText);
     } catch {
+      console.error("Spoonacular returned non-JSON:", rawText);
       return {
-        statusCode: 500,
+        statusCode: 502,
         body: JSON.stringify({ error: "Invalid JSON from Spoonacular" }),
       };
     }
 
-    // Always return an array so frontend doesn't crash
     return {
       statusCode: 200,
       body: JSON.stringify([data]),
