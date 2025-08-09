@@ -19,12 +19,15 @@ exports.handler = async (event) => {
       };
     }
 
-    const apiUrl = `https://api.spoonacular.com/recipes/analyze`;
+    const apiUrl = `https://api.spoonacular.com/recipes/analyze?apiKey=${apiKey}`;
 
-    const response = await fetch(`${apiUrl}?apiKey=${apiKey}`, {
+    const response = await fetch(apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ ingredientList: recipe }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Recipe Analysis",
+        ingredientList: recipe,
+      }),
     });
 
     const rawText = await response.text();
