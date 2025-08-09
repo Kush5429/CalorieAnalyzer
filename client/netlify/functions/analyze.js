@@ -1,66 +1,40 @@
-// analyze.js - CommonJS version for Netlify
-
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
   try {
-    const { ingredientList } = JSON.parse(event.body || '{}');
-
+    const { ingredientList } = JSON.parse(event.body || "{}"); // ✅ match frontend
     console.log("DEBUG: Ingredient list received:", ingredientList);
 
-    if (!ingredientList || ingredientList.trim() === "") {
+    if (!ingredientList) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Ingredient list is required.' }),
+        body: JSON.stringify({ error: "No ingredient list provided" }),
       };
     }
 
     const apiKey = process.env.SPOONACULAR_API_KEY;
-    if (!apiKey) {
-      console.error("ERROR: SPOONACULAR_API_KEY not found in environment variables");
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Missing API key on server.' }),
-      };
-    }
+    const apiUrl = `https://api.spoonacular.com/recipes/analyze?apiKey=${apiKey}`;
 
-    const response = await fetch(
-      `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ingredientList,
-          servings: 1
-        }),
-      }
-    );
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ingredientList }), // ✅ same name
+    });
 
-    const text = await response.text();
-
-    console.log("DEBUG: Raw response from Spoonacular:", text);
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (err) {
-      console.error("ERROR: Spoonacular did not return valid JSON");
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Invalid response from Spoonacular', raw: text }),
-      };
-    }
+    const data = await response.json();
+    console.log("DEBUG: Response from Spoonacular:", data);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        calories: data?.nutrition?.nutrients?.find(n => n.name === "Calories")?.amount || null,
+        protein: data?.nutrition?.nutrients?.find(n => n.name === "Protein")?.amount || null,
+        fat: data?.nutrition?.nutrients?.find(n => n.name === "Fat")?.amount || null,
+        carbs: data?.nutrition?.nutrients?.find(n => n.name === "Carbohydrates")?.amount || null,
+      }),
     };
-
   } catch (error) {
-    console.error("ERROR in analyze function:", error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+    console.error("ERROR:", error);
+    return { statusCode: 500, body: JSON.stringify({ error: "Internal Server Error" }) };
   }
 };
