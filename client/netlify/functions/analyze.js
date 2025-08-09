@@ -4,17 +4,20 @@ exports.handler = async (event) => {
   try {
     const { recipe } = JSON.parse(event.body);
 
-    // Build the Spoonacular API URL
     const apiKey = process.env.SPOONACULAR_API_KEY;
     const url = `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}&includeNutrition=true`;
 
-    // Make the request using native fetch (no node-fetch needed)
+    // Send as form-encoded data
+    const formBody = new URLSearchParams();
+    formBody.append("ingredientList", recipe);
+    formBody.append("servings", "1");
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify([{ name: recipe }]),
+      body: formBody.toString(),
     });
 
     if (!response.ok) {
