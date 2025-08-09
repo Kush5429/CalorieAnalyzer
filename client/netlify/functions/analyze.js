@@ -1,48 +1,56 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
-exports.handler = async (event) => {
+export async function handler(event) {
   try {
-    // Log raw incoming body
+    const { recipe } = JSON.parse(event.body);
     console.log("🔹 Raw incoming body:", event.body);
 
-    const body = JSON.parse(event.body || "{}");
-
-    // Accept ingredientList or recipe
-    const ingredientList = body?.ingredientList || body?.recipe;
-    console.log("🔹 Parsed ingredientList:", ingredientList);
-
-    if (!ingredientList) {
+    if (!recipe || !recipe.trim()) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: "No ingredient list provided" }),
       };
     }
 
+    const ingredientList = recipe.trim();
+    console.log("🔹 Parsed ingredientList:", ingredientList);
+
     const apiKey = process.env.SPOONACULAR_API_KEY;
-    const url = `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`;
+    const url = `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}&includeNutrition=true`;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ ingredientList, servings: 1 }),
+      body: new URLSearchParams({
+        ingredientList,
+        servings: "1",
+      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Spoonacular API error: ${response.status} - ${errorText}`);
-    }
+    // Debug log the raw Spoonacular reply before parsing
+    const rawText = await response.text();
+    console.log("🔹 Spoonacular raw response:", rawText);
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (err) {
+      console.error("❌ Failed to parse JSON:", err);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Invalid JSON from Spoonacular" }),
+      };
+    }
 
     return {
       statusCode: 200,
       body: JSON.stringify(data),
     };
-  } catch (error) {
-    console.error("Analyze function error:", error);
+  } catch (err) {
+    console.error("❌ Server error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
-};
+}
