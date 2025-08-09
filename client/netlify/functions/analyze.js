@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -23,21 +25,22 @@ exports.handler = async (event) => {
       };
     }
 
-    // ✅ DYNAMIC IMPORT
-    const fetch = (await import('node-fetch')).default;
-
+    // Prepare body params (everything except apiKey)
     const params = new URLSearchParams();
     params.append('ingredientList', recipe);
     params.append('servings', '1');
-    params.append('apiKey', apiKey);
 
-    const response = await fetch('https://api.spoonacular.com/recipes/parseIngredients', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
+    // ✅ apiKey goes in the query string, not in the body
+    const response = await fetch(
+      `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      }
+    );
 
     const data = await response.json();
     console.log("🔍 API response:", JSON.stringify(data));
